@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Milliy Choyxona</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --cream:#120E09; --cream-2:#2A2117; --ink:#F3EADA; --ink-soft:#B8AB93;
+    --teal:#D4AF37; --teal-dark:#B4901F; --clay:#C08432; --clay-dark:#A06B24;
+    --clay-tint:rgba(192,132,50,.16); --gold:#D4AF37; --maroon:#E7C567; --line:#3A3021; --white:#1E1810;
+    --food-red:#E8402C; --food-red-dark:#C22F1C;
+  }
+  *{box-sizing:border-box;}
+  html{height:auto;}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased;transition:filter .2s;min-height:100vh;overflow-y:auto;overflow-x:hidden;}
+  body.gray-mode{filter:grayscale(1);}
+  h1,h2,h3,.serif{font-family:'Cormorant Garamond',serif;}
+  .ornament{height:12px;background-image:repeating-linear-gradient(135deg, var(--gold) 0 6px, transparent 6px 12px);opacity:.45;}
+
+  /* Login screen */
+  .login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 20%, #241B10 0%, #0D0A07 70%);padding:20px;}
+  .login-card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:40px 36px;max-width:380px;width:100%;text-align:center;}
+  .login-card .eyebrow{font-size:12px;letter-spacing:3px;color:var(--gold);font-weight:600;margin-bottom:10px;}
+  .login-card h1{font-size:36px;color:var(--ink);margin:0 0 4px;}
+  .login-card p.sub{color:var(--ink-soft);font-size:13px;margin:0 0 26px;}
+  .role-btns{display:flex;flex-direction:column;gap:12px;}
+  .role-btn{padding:15px;border-radius:6px;font-size:14.5px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif;border:none;}
+  .role-btn.service{background:var(--teal);color:#1A1409;}
+  .role-btn.service:hover{background:var(--teal-dark);}
+  .role-btn.cashier{background:none;border:1px solid var(--gold);color:var(--gold);}
+  .role-btn.cashier:hover{background:var(--cream-2);}
+
+  header.top{background:radial-gradient(ellipse at 50% -20%, #2B2113 0%, #100C08 65%);color:var(--ink);padding:34px 20px 26px;text-align:center;border-bottom:1px solid var(--line);position:relative;}
+  header.top .eyebrow{font-size:12px;letter-spacing:3px;color:var(--gold);font-weight:600;margin-bottom:10px;}
+  header.top h1{font-size:clamp(28px,5.5vw,42px);font-weight:700;margin:0 0 8px;color:var(--ink);letter-spacing:.5px;}
+  header.top p{margin:0 auto;color:var(--ink-soft);font-size:13px;max-width:420px;}
+  header.top .divider{width:60px;height:1px;background:var(--line);margin:14px auto 0;position:relative;}
+  header.top .divider::after{content:'◆';position:absolute;top:-6px;left:50%;transform:translateX(-50%);color:var(--gold);font-size:11px;}
+  .exit-btn{position:absolute;top:16px;left:16px;background:none;border:1px solid var(--line);color:var(--ink-soft);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:'Manrope',sans-serif;}
+
+  nav.bar{display:flex;justify-content:space-between;align-items:center;max-width:1100px;margin:0 auto;padding:14px 20px;gap:10px;position:relative;}
+  .navlinks{display:flex;gap:8px;align-items:center;}
+  .navlinks button{background:var(--white);border:1px solid var(--line);cursor:pointer;font-family:'Manrope',sans-serif;font-size:13.5px;color:var(--ink-soft);padding:9px 16px;border-radius:20px;font-weight:600;}
+  .navlinks button.active{background:var(--teal);color:#1A1409;border-color:var(--teal);}
+  .dots-btn{background:var(--white);border:1px solid var(--line);width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:18px;color:var(--ink-soft);line-height:1;}
+  .dots-menu{position:absolute;top:56px;right:20px;background:var(--white);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.45);width:230px;padding:8px;display:none;z-index:70;}
+  .dots-menu.show{display:block;}
+  .dots-menu button.item{width:100%;text-align:left;background:none;border:none;padding:10px 10px;font-size:13.5px;color:var(--ink);cursor:pointer;border-radius:5px;font-family:'Manrope',sans-serif;}
+  .dots-menu button.item:hover{background:var(--cream-2);}
+  .dots-menu .sep{height:1px;background:var(--line);margin:6px 0;}
+  .dots-menu .label{font-size:11px;color:var(--ink-soft);padding:6px 10px 2px;font-weight:700;}
+  .lang-row{display:flex;gap:6px;padding:2px 10px 6px;}
+  .lang-row button{flex:1;font-size:11.5px;padding:6px 4px;border:1px solid var(--line);background:var(--cream);border-radius:4px;cursor:pointer;color:var(--ink-soft);font-family:'Manrope',sans-serif;}
+  .lang-row button.active{background:var(--teal);color:#1A1409;border-color:var(--teal);}
+  .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;font-size:13.5px;}
+  .switch{position:relative;width:36px;height:20px;background:var(--line);border-radius:20px;cursor:pointer;flex-shrink:0;}
+  .switch.on{background:var(--teal);}
+  .switch .knob{position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .15s;}
+  .switch.on .knob{left:18px;}
+
+  main{max-width:1100px;margin:0 auto;padding:6px 20px 80px;}
+  .note-box{background:var(--cream-2);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:6px;padding:11px 15px;font-size:12.5px;color:var(--ink-soft);margin:10px 0 18px;}
+
+  .rooms-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;margin-top:10px;}
+  .room-card{position:relative;background:var(--white);border:1.5px solid var(--line);border-radius:10px;padding:18px 14px;text-align:center;cursor:pointer;}
+  .room-card:hover{border-color:var(--teal);}
+  .room-card.occupied{border-color:var(--clay);background:var(--clay-tint);}
+  .room-card .num{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--gold);line-height:1.2;}
+  .room-card.occupied .num{color:var(--clay);}
+  .room-card .status{font-size:11.5px;color:var(--ink-soft);margin-top:6px;font-weight:600;}
+  .room-card .sum{font-size:13px;color:var(--clay);font-weight:700;margin-top:4px;}
+  .room-qr-btn{position:absolute;top:6px;right:6px;background:var(--cream);border:1px solid var(--line);color:var(--ink-soft);width:24px;height:24px;border-radius:5px;font-size:12px;cursor:pointer;line-height:1;}
+  .room-qr-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(6,4,2,.75);display:none;align-items:center;justify-content:center;padding:14px;z-index:60;}
+  .modal-overlay.show{display:flex;}
+  .room-modal{background:var(--cream);border-radius:10px;max-width:920px;width:100%;max-height:92vh;overflow-y:auto;border:1px solid var(--line);}
+  .room-modal-head{display:flex;justify-content:space-between;align-items:center;background:var(--cream-2);color:var(--ink);padding:16px 22px;border-radius:10px 10px 0 0;position:sticky;top:0;border-bottom:1px solid var(--line);}
+  .room-modal-head h2{margin:0;font-size:26px;color:var(--gold);}
+  .room-modal-head button{background:none;border:1px solid var(--line);color:var(--ink-soft);border-radius:20px;padding:6px 14px;cursor:pointer;font-size:13px;font-family:'Manrope',sans-serif;}
+  .room-body{display:grid;grid-template-columns:1.3fr 1fr;gap:0;}
+  @media (max-width:700px){.room-body{grid-template-columns:1fr;}}
+  .menu-pane{padding:18px 20px;border-right:1px solid var(--line);}
+  @media (max-width:700px){.menu-pane{border-right:none;border-bottom:1px solid var(--line);}}
+  .menu-pane h3{margin:0 0 4px;font-size:20px;color:var(--maroon);}
+  .cat-block{margin-bottom:16px;}
+  .cat-block .cat-title{display:inline-block;font-size:11.5px;font-weight:700;color:var(--food-red);background:rgba(232,64,44,.12);border:1px solid var(--food-red);border-radius:20px;padding:5px 14px;margin:10px 0 10px;letter-spacing:.3px;}
+  .menu-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;}
+  .menu-item-card{background:var(--white);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .15s,transform .15s;}
+  .menu-item-card:hover{border-color:var(--food-red);transform:translateY(-2px);}
+  .menu-item-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--cream-2);}
+  .menu-item-placeholder{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;background:var(--food-red);}
+  .menu-item-info{padding:8px 9px;}
+  .menu-item-info .name{font-size:12.5px;font-weight:600;line-height:1.3;color:var(--ink);}
+  .menu-item-info .price{font-size:13px;color:var(--food-red);font-weight:800;margin-top:3px;font-family:'Manrope',sans-serif;}
+  .order-pane{padding:18px 20px;}
+  .order-pane h3{margin:0 0 10px;font-size:20px;color:var(--maroon);}
+  .order-pane h4{margin:16px 0 8px;font-size:14px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:12px;}
+  .order-empty{font-size:13.5px;color:var(--ink-soft);}
+  .order-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .order-row.readonly{opacity:.75;}
+  .order-row img,.order-row .ph{width:38px;height:38px;border-radius:6px;object-fit:cover;flex-shrink:0;}
+  .order-row .ph{display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;color:#1A1409;font-size:14px;}
+  .order-row .info{flex:1;font-size:13px;}
+  .order-row .sub{font-size:12.5px;color:var(--gold);font-weight:700;min-width:70px;text-align:right;}
+  .qty-ctrl{display:flex;align-items:center;gap:6px;}
+  .qty-ctrl button{width:20px;height:20px;border:1px solid var(--line);background:var(--cream);color:var(--ink);border-radius:3px;cursor:pointer;font-size:13px;line-height:1;}
+  .bill-total{display:flex;justify-content:space-between;font-weight:700;font-size:17px;margin:14px 0;color:var(--ink);border-top:1px solid var(--line);padding-top:12px;}
+
+  .btn{border:none;padding:11px 16px;border-radius:5px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif;}
+  .btn-clay{background:var(--clay);color:#1A1409;}
+  .btn-clay:hover{background:var(--clay-dark);}
+  .btn-teal{background:var(--teal);color:#1A1409;}
+  .btn-teal:hover{background:var(--teal-dark);}
+  .btn-outline{background:none;border:1px solid var(--line);color:var(--ink-soft);}
+  .btn-food-red{background:var(--food-red);color:#fff;}
+  .btn-food-red:hover{background:var(--food-red-dark);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  .tool-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .tool-row button{background:var(--white);border:1px solid var(--line);color:var(--ink-soft);padding:10px 16px;border-radius:6px;font-size:13px;cursor:pointer;font-family:'Manrope',sans-serif;font-weight:600;}
+  .tool-row button:hover{border-color:var(--gold);color:var(--gold);}
+  .tool-row button.danger:hover{border-color:var(--clay);color:var(--clay);}
+
+  /* Billing panel */
+  .billing-card{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:14px;border-left:5px solid var(--clay);}
+  .billing-card .btop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .billing-card .rn{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--maroon);}
+  .edit-line{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:13px;flex-wrap:wrap;}
+  .edit-line .nm{flex:1;min-width:100px;}
+  .edit-line input{width:60px;padding:5px 6px;border:1px solid var(--line);border-radius:4px;background:var(--cream);color:var(--ink);font-size:12.5px;font-family:'Manrope',sans-serif;}
+  .edit-line .rm{background:none;border:none;color:var(--clay);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;}
+  .billing-card .rowtotal{display:flex;justify-content:space-between;font-weight:700;font-size:15px;border-top:1px dashed var(--line);padding-top:8px;margin-top:6px;}
+  .grand-total-box{background:var(--teal);color:#1A1409;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:700;margin-top:8px;}
+  .empty-state{text-align:center;padding:50px 20px;color:var(--ink-soft);font-size:14px;}
+
+  /* Journal */
+  .journal-row{display:flex;justify-content:space-between;align-items:center;background:var(--white);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:8px;font-size:13px;}
+  .journal-row .rn{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold);font-weight:700;}
+  .journal-row .dt{color:var(--ink-soft);font-size:12px;}
+  .journal-row .amt{font-weight:700;color:var(--ink);}
+  .journal-summary{background:var(--cream-2);border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin-bottom:16px;display:flex;justify-content:space-between;font-weight:700;font-size:15px;color:var(--gold);}
+
+  /* Add / edit products */
+  .add-wrap{display:grid;grid-template-columns:1fr 1.2fr;gap:30px;margin-top:14px;}
+  @media (max-width:760px){.add-wrap{grid-template-columns:1fr;}}
+  .form-card{background:var(--white);border:1px solid var(--line);border-radius:8px;padding:22px;}
+  .form-card h3{margin:0 0 16px;font-size:22px;color:var(--maroon);}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:5px;}
+  .field input,.field select{width:100%;padding:10px;border:1px solid var(--line);border-radius:4px;font-family:'Manrope',sans-serif;font-size:14px;background:var(--cream);color:var(--ink);}
+  .imgtabs{display:flex;gap:8px;margin-bottom:8px;}
+  .imgtabs button{flex:1;padding:8px;border:1px solid var(--line);background:var(--cream);border-radius:4px;font-size:12.5px;cursor:pointer;color:var(--ink-soft);font-family:'Manrope',sans-serif;font-weight:600;}
+  .imgtabs button.active{background:var(--teal);color:#1A1409;border-color:var(--teal);}
+  .img-preview{width:100%;aspect-ratio:4/3;border-radius:6px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--cream-2);margin-top:8px;color:var(--ink-soft);font-size:12.5px;}
+  .img-preview img{width:100%;height:100%;object-fit:cover;}
+  .products-list h3{margin:0 0 12px;font-size:22px;color:var(--maroon);}
+  .product-row{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:10px;flex-wrap:wrap;}
+  .product-row img,.product-row .ph{width:44px;height:44px;border-radius:6px;object-fit:cover;flex-shrink:0;}
+  .product-row .ph{display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;color:#1A1409;font-size:16px;}
+  .product-row input{border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-size:13px;background:var(--cream);color:var(--ink);font-family:'Manrope',sans-serif;}
+  .product-row .n-input{flex:1;min-width:110px;}
+  .product-row .p-input{width:90px;}
+  .product-row .save-p{background:var(--teal);color:#1A1409;border:none;border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;}
+  .product-row .del{background:none;border:1px solid var(--line);color:var(--clay);border-radius:4px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:'Manrope',sans-serif;}
+
+  footer{text-align:center;padding:24px;font-size:12.5px;color:var(--ink-soft);border-top:1px solid var(--line);}
+  .toast{position:fixed;top:16px;right:16px;background:var(--white);border:1px solid var(--gold);color:var(--ink);padding:14px 18px;border-radius:8px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:200;opacity:0;transform:translateY(-10px);transition:opacity .25s,transform .25s;max-width:280px;}
+  .toast.show{opacity:1;transform:translateY(0);}
+  .journal-items{font-size:12px;color:var(--ink-soft);margin-top:4px;line-height:1.5;}
+  .pay-select{padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--cream);color:var(--ink);font-size:12.5px;font-family:'Manrope',sans-serif;margin-right:8px;}
+
+  .dialog-box{background:var(--cream);border:1px solid var(--line);border-radius:10px;max-width:380px;width:100%;overflow:hidden;}
+  .dialog-box .room-modal-head{border-radius:10px 10px 0 0;}
+  .dialog-body{padding:20px 22px;}
+  .dialog-body p{margin:0 0 14px;font-size:14px;color:var(--ink);line-height:1.5;white-space:pre-line;}
+  .dialog-body input{width:100%;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--white);color:var(--ink);margin-bottom:14px;font-family:'Manrope',sans-serif;font-size:14px;}
+  .dialog-actions{display:flex;gap:10px;}
+  .dialog-actions .btn{flex:1;}
+</style>
+</head>
+<body>
+
+<audio id="orderSound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="eyebrow" data-k="heroEyebrow">Xush kelibsiz</div>
+    <h1 id="loginTitle">Milliy Choyxona</h1>
+    <p class="sub" data-k="loginSub">Davom etish uchun bo'limni tanlang</p>
+    <div class="role-btns">
+      <button class="role-btn service" data-k="btnServiceRole" onclick="enterApp('service')">Xona xizmati</button>
+      <button class="role-btn cashier" data-k="btnCashierRole" onclick="tryEnterCashier()">Kassa monitori</button>
+    </div>
+  </div>
+</div>
+
+<div id="mainApp" style="display:none;">
+  <header class="top">
+    <button class="exit-btn" data-k="exitBtn" onclick="exitToLogin()">Chiqish</button>
+    <div class="eyebrow" data-k="heroEyebrow">Xush kelibsiz</div>
+    <h1 id="siteTitle">Milliy Choyxona</h1>
+    <p id="siteSubtitle">Xonalar boshqaruvi va hisob-kitob tizimi</p>
+    <div class="divider"></div>
+  </header>
+  <div class="ornament"></div>
+
+  <nav class="bar">
+    <div style="font-family:'Cormorant Garamond',serif;font-weight:700;font-size:20px;color:var(--teal-dark);" id="brandMini">Milliy Choyxona</div>
+    <div class="navlinks">
+      <button id="tabRooms" class="active" onclick="showView('rooms')" data-k="navRooms">Xonalar</button>
+      <button id="tabBilling" onclick="showView('billing')" data-k="navBilling">Hisob-kitob</button>
+    </div>
+    <button class="dots-btn" onclick="toggleDotsMenu()">⋮</button>
+    <div class="dots-menu" id="dotsMenu">
+      <button class="item" id="dotsMenuAdd" data-k="menuBtnAdd" onclick="showView('add');closeDotsMenu();">Mahsulot qo'shish</button>
+      <button class="item" id="dotsMenuEdit" data-k="menuBtnEdit" onclick="showView('add');closeDotsMenu();">Narx va nomini tahrirlash</button>
+      <div class="sep" id="dotsMenuSep1"></div>
+      <div class="toggle-row">
+        <span data-k="menuBtnGray">Qora-oq rejim</span>
+        <div class="switch" id="graySwitch" onclick="toggleGray()"><div class="knob"></div></div>
+      </div>
+      <div class="sep"></div>
+      <div class="label" data-k="menuBtnLang">Til</div>
+      <div class="lang-row">
+        <button data-lang="uz" class="active" onclick="setLang('uz')">Lotin</button>
+        <button data-lang="uzc" onclick="setLang('uzc')">Кирилл</button>
+        <button data-lang="ru" onclick="setLang('ru')">Русский</button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="roomsView">
+    <div class="note-box" data-k="roomsNote">1 dan 15 gacha xonalar. Xonaga bosib buyurtma kiriting, keyin "Buyurtmani yuborish" orqali kassaga jo'nating.</div>
+    <div class="rooms-grid" id="roomsGrid"></div>
+  </main>
+
+  <main id="billingView" style="display:none;">
+    <h2 class="serif" style="margin:14px 0 4px;color:var(--maroon);" data-k="billingTitle">Hisob-kitob</h2>
+    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;" data-k="billingSubtitle">Barcha band xonalarning buyurtmalari va summasi</p>
+    <div class="tool-row">
+      <button data-k="toolAddFood" onclick="showView('add')">Taom qo'shish</button>
+      <button data-k="toolJournal" onclick="showView('journal')">Jurnal</button>
+      <button class="danger" data-k="toolEndDay" onclick="endDay()">Kunni yakunlash</button>
+    </div>
+    <div id="billingList"></div>
+  </main>
+
+  <main id="journalView" style="display:none;">
+    <h2 class="serif" style="margin:14px 0 4px;color:var(--maroon);" data-k="journalTitle">Jurnal</h2>
+    <div class="tool-row">
+      <button onclick="showView('billing')" data-k="backToBilling">← Hisob-kitobga qaytish</button>
+      <button class="danger" data-k="clearJournalBtn" onclick="clearJournal()">Jurnalni tozalash</button>
+    </div>
+    <div id="journalSummary"></div>
+    <div id="journalList"></div>
+  </main>
+
+  <main id="addView" style="display:none;">
+    <div class="add-wrap">
+      <div class="form-card">
+        <h3 data-k="addProductTitle">Yangi mahsulot qo'shish</h3>
+        <div class="field"><label data-k="fieldName">Nomi</label><input type="text" id="pName"></div>
+        <div class="field"><label data-k="fieldPrice">Narxi (so'm)</label><input type="number" id="pPrice"></div>
+        <div class="field"><label data-k="fieldCategory">Kategoriya</label><input type="text" id="pCat" list="catList"><datalist id="catList"></datalist></div>
+        <div class="field">
+          <label data-k="fieldImage">Rasm</label>
+          <div class="imgtabs">
+            <button type="button" class="active" id="tabLink" data-k="imgLinkTab" onclick="setImgMode('link')">Rasm havolasi</button>
+            <button type="button" id="tabUpload" data-k="imgUploadTab" onclick="setImgMode('upload')">Galereyadan tanlash</button>
+          </div>
+          <input type="text" id="pImgLink" placeholder="https://...">
+          <input type="file" id="pImgFile" accept="image/*" style="display:none;">
+          <div class="img-preview" id="imgPreview" data-k="imgPreviewPlaceholder">Rasm ko'rinishi shu yerda chiqadi</div>
+        </div>
+        <button class="btn btn-teal" style="width:100%;" data-k="saveProductBtn" onclick="saveProduct()">Mahsulotni saqlash</button>
+      </div>
+      <div class="products-list">
+        <h3 data-k="existingProducts">Mavjud mahsulotlar</h3>
+        <div id="productsList"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer data-k="footerText">Milliy Choyxona — xonalar va hisob-kitob boshqaruv tizimi</footer>
+  <div style="text-align:center;padding-bottom:20px;font-size:11px;" id="storageStatus"></div>
+</div>
+
+<div class="modal-overlay" id="roomOverlay">
+  <div class="room-modal">
+    <div class="room-modal-head">
+      <h2 id="roomModalTitle">Xona 1</h2>
+      <button data-k="close" onclick="closeRoomModal()">Yopish</button>
+    </div>
+    <div class="room-body">
+      <div class="menu-pane" id="menuPane"></div>
+      <div class="order-pane" id="orderPane"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="qrOverlay">
+  <div class="dialog-box" style="max-width:300px;">
+    <div class="dialog-body" style="text-align:center;">
+      <h3 id="qrTitle" style="margin:0 0 14px;color:var(--gold);">QR</h3>
+      <img id="qrImage" src="" style="width:200px;height:200px;border-radius:8px;border:1px solid var(--line);margin-bottom:12px;">
+      <p id="qrLink" style="font-size:11.5px;word-break:break-all;color:var(--ink-soft);"></p>
+      <div class="dialog-actions"><button class="btn btn-teal" onclick="document.getElementById('qrOverlay').classList.remove('show')">OK</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dialogOverlay">
+  <div class="dialog-box">
+    <div class="room-modal-head"><h2 id="dialogTitle" style="font-size:20px;"></h2></div>
+    <div class="dialog-body">
+      <p id="dialogMessage"></p>
+      <input type="text" id="dialogInput" style="display:none;">
+      <div class="dialog-actions">
+        <button class="btn btn-outline" id="dialogCancelBtn">Bekor qilish</button>
+        <button class="btn btn-teal" id="dialogOkBtn">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let _dialogResolve = null;
+function openDialog(opts){
+  return new Promise(resolve=>{
+    _dialogResolve = resolve;
+    document.getElementById('dialogTitle').textContent = opts.title || '';
+    document.getElementById('dialogTitle').parentElement.style.display = opts.title ? 'flex' : 'none';
+    document.getElementById('dialogMessage').textContent = opts.message || '';
+    const inp = document.getElementById('dialogInput');
+    const cancelBtn = document.getElementById('dialogCancelBtn');
+    const okBtn = document.getElementById('dialogOkBtn');
+    if(opts.mode === 'prompt'){
+      inp.style.display='block'; inp.type = opts.inputType||'text'; inp.value=''; cancelBtn.style.display='inline-block';
+    } else if(opts.mode === 'confirm'){
+      inp.style.display='none'; cancelBtn.style.display='inline-block';
+    } else {
+      inp.style.display='none'; cancelBtn.style.display='none';
+    }
+    okBtn.dataset.mode = opts.mode;
+    document.getElementById('dialogOverlay').classList.add('show');
+    if(opts.mode==='prompt') setTimeout(()=>inp.focus(), 50);
+  });
+}
+function closeDialog(result){
+  document.getElementById('dialogOverlay').classList.remove('show');
+  if(_dialogResolve){ _dialogResolve(result); _dialogResolve = null; }
+}
+document.getElementById('dialogOkBtn').addEventListener('click', ()=>{
+  const mode = document.getElementById('dialogOkBtn').dataset.mode;
+  if(mode==='prompt') closeDialog(document.getElementById('dialogInput').value);
+  else closeDialog(true);
+});
+document.getElementById('dialogCancelBtn').addEventListener('click', ()=>{
+  const mode = document.getElementById('dialogOkBtn').dataset.mode;
+  closeDialog(mode==='confirm' ? false : null);
+});
+document.getElementById('dialogInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter') document.getElementById('dialogOkBtn').click();
+});
+</script>
+
+<script>
+const CASHIER_PASSWORD = "1";
+
+/* ==================================================================
+   FIREBASE ULASH JOYI
+   Firebase Console (console.firebase.google.com) dan olgan
+   firebaseConfig kodini pastdagi obyekt ICHIGA joylashtiring.
+   Boshqa hech qanday kodga tegishning hojati yo'q.
+   ================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyAqhKGwTJeinbeQMCcBRAxHeEEIR17ZER0",
+  authDomain: "alfa-f67c1.firebaseapp.com",
+  projectId: "alfa-f67c1",
+  storageBucket: "alfa-f67c1.firebasestorage.app",
+  messagingSenderId: "403297232221",
+  appId: "1:403297232221:web:d19ec638c8f24eaaaab4b4"
+};
+/* ================================================================== */
+
+let _db = null;
+let _firebaseReady = false;
+try{
+  if(firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof firebase !== 'undefined'){
+    firebase.initializeApp(firebaseConfig);
+    _db = firebase.firestore();
+    _firebaseReady = true;
+  }
+}catch(e){
+  console.error('Firebase init xatosi:', e);
+  _firebaseReady = false;
+}
+
+/* ---------------- SAFE STORAGE ----------------
+   1) Agar Firebase ulangan bo'lsa -> shu yerga (barcha qurilmalarga umumiy, doimiy)
+   2) Aks holda -> Claude'ning ichki xotirasi (agar mavjud bo'lsa)
+   3} Aks holda -> shu sahifa sessiyasi davomida ishlaydigan vaqtinchalik xotira
+--------------------------------------------------- */
+const _memoryStore = {};
+let _usingFallbackStorage = false;
+function _hasRealStorage(){
+  return typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function';
+}
+async function storageGet(key, shared){
+  if(_firebaseReady && _db){
+    try{
+      const docSnap = await _db.collection('choyxona').doc(key).get();
+      if(docSnap.exists) return {key, value: docSnap.data().value, shared};
+      return null;
+    }catch(e){
+      console.error('Firebase get xatosi:', e);
+    }
+  }
+  if(_hasRealStorage() && !_usingFallbackStorage){
+    try{ return await window.storage.get(key, shared); }
+    catch(e){ return null; }
+  }
+  return (key in _memoryStore) ? {key, value:_memoryStore[key], shared} : null;
+}
+async function storageSet(key, value, shared){
+  if(_firebaseReady && _db){
+    try{
+      await _db.collection('choyxona').doc(key).set({value});
+      return {key, value, shared};
+    }catch(e){
+      console.error('Firebase set xatosi:', e);
+    }
+  }
+  if(_hasRealStorage() && !_usingFallbackStorage){
+    try{
+      const r = await window.storage.set(key, value, shared);
+      if(r) return r;
+      _usingFallbackStorage = true;
+    }catch(e){
+      _usingFallbackStorage = true;
+    }
+  }
+  _memoryStore[key] = value;
+  return {key, value, shared};
+}
+
+const I18N = {
+  uz: {
+    appTitle:"Milliy Choyxona", appSubtitle:"Xonalar boshqaruvi va hisob-kitob tizimi",
+    navRooms:"Xonalar", navBilling:"Hisob-kitob",
+    roomsNote:"1 dan 15 gacha xonalar. Xonaga bosib buyurtma kiriting, keyin \"Buyurtmani yuborish\" orqali kassaga jo'nating.",
+    free:"Bo'sh", occupied:"Band", close:"Yopish", menuHeading:"Menyu", orderHeading:"Yangi tanlov",
+    orderEmpty:"Hali tanlov yo'q. Menyudan taom tanlang.", total:"Jami:",
+    addProductTitle:"Yangi mahsulot qo'shish", fieldName:"Nomi", fieldPrice:"Narxi (so'm)",
+    fieldCategory:"Kategoriya", fieldImage:"Rasm", imgLinkTab:"Rasm havolasi", imgUploadTab:"Galereyadan tanlash",
+    imgPreviewPlaceholder:"Rasm ko'rinishi shu yerda chiqadi", saveProductBtn:"Mahsulotni saqlash",
+    existingProducts:"Mavjud mahsulotlar", save:"Saqlash", del:"O'chirish",
+    billingTitle:"Hisob-kitob", billingSubtitle:"Barcha band xonalarning buyurtmalari va summasi",
+    noOccupiedRooms:"Hozircha band xona yo'q.", roomLabel:"Xona", markPaid:"To'landi",
+    grandTotal:"Umumiy hisob", menuBtnAdd:"Mahsulot qo'shish", menuBtnEdit:"Narx va nomini tahrirlash",
+    menuBtnGray:"Qora-oq rejim", menuBtnLang:"Til", footerText:"Milliy Choyxona — xonalar va hisob-kitob boshqaruv tizimi",
+    heroEyebrow:"Xush kelibsiz", lastOrderTime:"Oxirgi buyurtma vaqti",
+    loginSub:"Davom etish uchun bo'limni tanlang", btnServiceRole:"Xona xizmati", btnCashierRole:"Kassa monitori",
+    wrongPassword:"Parol noto'g'ri", exitBtn:"Chiqish", sendOrderBtn:"Buyurtmani yuborish",
+    sentSectionTitle:"Yuborilgan buyurtma", toolAddFood:"Taom qo'shish", toolJournal:"Jurnal",
+    toolEndDay:"Kunni yakunlash", journalTitle:"Jurnal", journalEmpty:"Hozircha yozuvlar yo'q.",
+    journalTotalToday:"Umumiy tushum", endDayConfirmPrefix:"Umumiy tushum:", endDayConfirmSuffix:"Kunni yakunlaysizmi?",
+    endDayNone:"Bugun uchun jurnalda hali yozuvlar yo'q.", endDaySuccess:"Kun yakunlandi. Jurnal butunlay saqlanib qoladi.",
+    backToBilling:"← Hisob-kitobga qaytish", enterPasswordPrompt:"Kassa parolini kiriting:",
+    noSentOrder:"Hali yuborilgan buyurtma yo'q.",
+    cash:"Naqd", card:"Plastik", receiptPdf:"Chek (PDF)", exportExcel:"Excel / Telegram",
+    expensePrompt:"Bugungi xarajat (so'm), agar bo'lmasa 0 kiriting:", expenseLabel:"Xarajat",
+    profitLabel:"Sof foyda", lossLabel:"Zarar", pdfError:"Faylni yaratishda xatolik yuz berdi.",
+    shareFallbackMsg:"Fayl yuklab olindi. Uni Telegram'da qo'lda biriktirib yuborishingiz mumkin.",
+    newOrderToast:"yangi buyurtma yuborildi", dateLabel:"Sana", timeLabel:"Vaqt",
+    clearJournalBtn:"Jurnalni tozalash", clearJournalConfirm:"Butun jurnal o'chiriladi (zaxira nusxasi saqlanadi). Davom etasizmi?", clearJournalDone:"Jurnal tozalandi.",
+  },
+  uzc: {
+    appTitle:"Миллий Чойхона", appSubtitle:"Хоналар бошқаруви ва ҳисоб-китоб тизими",
+    navRooms:"Хоналар", navBilling:"Ҳисоб-китоб",
+    roomsNote:"1 дан 15 гача хоналар. Хонага босиб буюртма киритинг, кейин \"Буюртмани юбориш\" орқали кассага жўнатинг.",
+    free:"Бўш", occupied:"Банд", close:"Ёпиш", menuHeading:"Меню", orderHeading:"Янги танлов",
+    orderEmpty:"Ҳали танлов йўқ. Менюдан таом танланг.", total:"Жами:",
+    addProductTitle:"Янги маҳсулот қўшиш", fieldName:"Номи", fieldPrice:"Нархи (сўм)",
+    fieldCategory:"Категория", fieldImage:"Расм", imgLinkTab:"Расм ҳаволаси", imgUploadTab:"Галереядан танлаш",
+    imgPreviewPlaceholder:"Расм кўриниши шу ерда чиқади", saveProductBtn:"Маҳсулотни сақлаш",
+    existingProducts:"Мавжуд маҳсулотлар", save:"Сақлаш", del:"Ўчириш",
+    billingTitle:"Ҳисоб-китоб", billingSubtitle:"Барча банд хоналарнинг буюртмалари ва суммаси",
+    noOccupiedRooms:"Ҳозирча банд хона йўқ.", roomLabel:"Хона", markPaid:"Тўланди",
+    grandTotal:"Умумий ҳисоб", menuBtnAdd:"Маҳсулот қўшиш", menuBtnEdit:"Нарх ва номини таҳрирлаш",
+    menuBtnGray:"Қора-оқ режим", menuBtnLang:"Тил", footerText:"Миллий Чойхона — хоналар ва ҳисоб-китоб бошқарув тизими",
+    heroEyebrow:"Хуш келибсиз", lastOrderTime:"Сўнгги буюртма вақти",
+    loginSub:"Давом этиш учун бўлимни танланг", btnServiceRole:"Хона хизмати", btnCashierRole:"Касса монитори",
+    wrongPassword:"Парол нотўғри", exitBtn:"Чиқиш", sendOrderBtn:"Буюртмани юбориш",
+    sentSectionTitle:"Юборилган буюртма", toolAddFood:"Таом қўшиш", toolJournal:"Журнал",
+    toolEndDay:"Кунни якунлаш", journalTitle:"Журнал", journalEmpty:"Ҳозирча ёзувлар йўқ.",
+    journalTotalToday:"Умумий тушум", endDayConfirmPrefix:"Умумий тушум:", endDayConfirmSuffix:"Кунни якунлайсизми?",
+    endDayNone:"Бугун учун журналда ҳали ёзувлар йўқ.", endDaySuccess:"Кун якунланди. Журнал бутунлай сақланиб қолади.",
+    backToBilling:"← Ҳисоб-китобга қайтиш", enterPasswordPrompt:"Касса паролини киритинг:",
+    noSentOrder:"Ҳали юборилган буюртма йўқ.",
+    cash:"Нақд", card:"Пластик", receiptPdf:"Чек (PDF)", exportExcel:"Excel / Telegram",
+    expensePrompt:"Бугунги харажат (сўм), бўлмаса 0 киритинг:", expenseLabel:"Харажат",
+    profitLabel:"Соф фойда", lossLabel:"Зарар", pdfError:"Файлни яратишда хатолик юз берди.",
+    shareFallbackMsg:"Файл юклаб олинди. Уни Telegram'да қўлда бириктириб юборишингиз мумкин.",
+    newOrderToast:"янги буюртма юборилди", dateLabel:"Сана", timeLabel:"Вақт",
+    clearJournalBtn:"Журнални тозалаш", clearJournalConfirm:"Бутун журнал ўчирилади (заҳира нусхаси сақланади). Давом этасизми?", clearJournalDone:"Журнал тозаланди.",
+  },
+  ru: {
+    appTitle:"Чайхана «Миллий»", appSubtitle:"Управление залами и система расчёта",
+    navRooms:"Залы", navBilling:"Расчёт",
+    roomsNote:"Залы с 1 по 15. Нажмите на зал, добавьте позиции и отправьте заказ на кассу.",
+    free:"Свободен", occupied:"Занят", close:"Закрыть", menuHeading:"Меню", orderHeading:"Новый выбор",
+    orderEmpty:"Пока ничего не выбрано. Выберите блюдо из меню.", total:"Итого:",
+    addProductTitle:"Добавить новый товар", fieldName:"Название", fieldPrice:"Цена (сум)",
+    fieldCategory:"Категория", fieldImage:"Фото", imgLinkTab:"Ссылка на фото", imgUploadTab:"Выбрать из галереи",
+    imgPreviewPlaceholder:"Здесь появится изображение", saveProductBtn:"Сохранить товар",
+    existingProducts:"Существующие товары", save:"Сохранить", del:"Удалить",
+    billingTitle:"Расчёт", billingSubtitle:"Заказы и суммы по всем занятым залам",
+    noOccupiedRooms:"Пока нет занятых залов.", roomLabel:"Зал", markPaid:"Оплачено",
+    grandTotal:"Общий итог", menuBtnAdd:"Добавить товар", menuBtnEdit:"Изменить цену и название",
+    menuBtnGray:"Чёрно-белый режим", menuBtnLang:"Язык", footerText:"Чайхана «Миллий» — система управления залами и расчётами",
+    heroEyebrow:"Добро пожаловать", lastOrderTime:"Время последнего заказа",
+    loginSub:"Выберите раздел, чтобы продолжить", btnServiceRole:"Обслуживание зала", btnCashierRole:"Касса",
+    wrongPassword:"Неверный пароль", exitBtn:"Выйти", sendOrderBtn:"Отправить заказ",
+    sentSectionTitle:"Отправленный заказ", toolAddFood:"Добавить блюдо", toolJournal:"Журнал",
+    toolEndDay:"Закрыть смену", journalTitle:"Журнал", journalEmpty:"Записей пока нет.",
+    journalTotalToday:"Общая выручка", endDayConfirmPrefix:"Общая выручка:", endDayConfirmSuffix:"Закрыть смену?",
+    endDayNone:"На сегодня в журнале пока нет записей.", endDaySuccess:"Смена закрыта. Журнал полностью сохранён.",
+    backToBilling:"← Назад к расчёту", enterPasswordPrompt:"Введите пароль кассы:",
+    noSentOrder:"Заказ ещё не отправлен.",
+    cash:"Наличные", card:"Карта", receiptPdf:"Чек (PDF)", exportExcel:"Excel / Telegram",
+    expensePrompt:"Расходы за сегодня (сум), если нет — введите 0:", expenseLabel:"Расход",
+    profitLabel:"Чистая прибыль", lossLabel:"Убыток", pdfError:"Ошибка при создании файла.",
+    shareFallbackMsg:"Файл скачан. Вы можете вручную прикрепить его в Telegram.",
+    newOrderToast:"новый заказ отправлен", dateLabel:"Дата", timeLabel:"Время",
+    clearJournalBtn:"Очистить журнал", clearJournalConfirm:"Весь журнал будет удалён (резервная копия сохранится). Продолжить?", clearJournalDone:"Журнал очищен.",
+  }
+};
+
+const ITEM_NAME_TR = {
+  choy1:{uzc:"Кўк чой", ru:"Зелёный чай"}, choy2:{uzc:"Қора чой", ru:"Чёрный чай"},
+  choy3:{uzc:"Райҳон-ялпиз чой", ru:"Чай с базиликом и мятой"}, non1:{uzc:"Патир нон", ru:"Лепёшка патыр"},
+  somsa1:{uzc:"Гўштли сомса", ru:"Самса с мясом"}, somsa2:{uzc:"Картошкали сомса", ru:"Самса с картофелем"},
+  salat1:{uzc:"Ачичук салат", ru:"Салат ачичук"}, palov1:{uzc:"Тошкент палови", ru:"Ташкентский плов"},
+  lagmon1:{uzc:"Лағмон", ru:"Лагман"}, manti1:{uzc:"Манти", ru:"Манты"},
+  shashlik1:{uzc:"Қўй гўшти шашлик", ru:"Шашлык из баранины"}, norin1:{uzc:"Норин", ru:"Нарын"},
+  halva1:{uzc:"Ҳалва", ru:"Халва"}, parvarda1:{uzc:"Парварда", ru:"Парварда"},
+};
+const CAT_TR = {
+  "Choy turlari":{uzc:"Чой турлари", ru:"Виды чая"},
+  "Non va boshlang'ich":{uzc:"Нон ва бошланғич", ru:"Хлеб и закуски"},
+  "Issiq taomlar":{uzc:"Иссиқ таомлар", ru:"Горячие блюда"},
+  "Shirinliklar":{uzc:"Ширинликлар", ru:"Сладости"},
+};
+
+let currentLang = 'uz';
+function t(key){ return (I18N[currentLang] && I18N[currentLang][key]) || I18N.uz[key] || key; }
+function trName(item){
+  if(currentLang==='uz') return item.name;
+  const tr = ITEM_NAME_TR[item.id];
+  return (tr && tr[currentLang]) ? tr[currentLang] : item.name;
+}
+function trCat(cat){
+  if(currentLang==='uz') return cat;
+  const tr = CAT_TR[cat];
+  return (tr && tr[currentLang]) ? tr[currentLang] : cat;
+}
+
+function applyStaticTranslations(){
+  document.querySelectorAll('[data-k]').forEach(el=>{ el.textContent = t(el.dataset.k); });
+  document.getElementById('siteTitle').textContent = t('appTitle');
+  document.getElementById('siteSubtitle').textContent = t('appSubtitle');
+  document.getElementById('brandMini').textContent = t('appTitle');
+  document.getElementById('loginTitle').textContent = t('appTitle');
+  document.title = t('appTitle');
+}
+
+function setLang(lang){
+  currentLang = lang;
+  document.querySelectorAll('.lang-row button').forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
+  applyStaticTranslations();
+  if(document.getElementById('roomsView').style.display!=='none') renderRooms();
+  if(document.getElementById('billingView').style.display!=='none') renderBilling();
+  if(document.getElementById('journalView').style.display!=='none') renderJournal();
+  if(document.getElementById('addView').style.display!=='none'){ renderCategoryList(); renderProductsList(); }
+}
+
+function toggleDotsMenu(){ document.getElementById('dotsMenu').classList.toggle('show'); }
+function closeDotsMenu(){ document.getElementById('dotsMenu').classList.remove('show'); }
+document.addEventListener('click', (e)=>{
+  const menu = document.getElementById('dotsMenu');
+  const btn = document.querySelector('.dots-btn');
+  if(menu && menu.classList.contains('show') && !menu.contains(e.target) && e.target!==btn) menu.classList.remove('show');
+});
+let grayOn = false;
+function toggleGray(){
+  grayOn = !grayOn;
+  document.body.classList.toggle('gray-mode', grayOn);
+  document.getElementById('graySwitch').classList.toggle('on', grayOn);
+}
+
+/* ---------------- LOGIN / ROLES ---------------- */
+let currentRole = null;
+function enterApp(role){
+  currentRole = role;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('tabRooms').style.display = role==='service' ? 'inline-block' : 'none';
+  document.getElementById('tabBilling').style.display = role==='cashier' ? 'inline-block' : 'none';
+  document.getElementById('dotsMenuAdd').style.display = role==='cashier' ? 'block' : 'none';
+  document.getElementById('dotsMenuEdit').style.display = role==='cashier' ? 'block' : 'none';
+  document.getElementById('dotsMenuSep1').style.display = role==='cashier' ? 'block' : 'none';
+  showView(role==='cashier' ? 'billing' : 'rooms');
+}
+async function tryEnterCashier(){
+  const pass = await openDialog({title:t('btnCashierRole'), message:t('enterPasswordPrompt'), mode:'prompt', inputType:'password'});
+  if(pass === null) return;
+  if(pass === CASHIER_PASSWORD) enterApp('cashier');
+  else await openDialog({message:t('wrongPassword'), mode:'alert'});
+}
+function exitToLogin(){
+  currentRole = null;
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  closeDotsMenu();
+}
+
+const CATEGORY_COLORS = {};
+const PALETTE = ['#E8402C','#E86A2C','#C22F1C','#D4572B','#B8451F','#E85A3A'];
+function colorForCategory(cat){
+  if(!CATEGORY_COLORS[cat]){
+    const idx = Object.keys(CATEGORY_COLORS).length % PALETTE.length;
+    CATEGORY_COLORS[cat] = PALETTE[idx];
+  }
+  return CATEGORY_COLORS[cat];
+}
+
+const DEFAULT_MENU = [
+  {id:"choy1", name:"Ko'k choy", price:8000, category:"Choy turlari", image:""},
+  {id:"choy2", name:"Qora choy", price:8000, category:"Choy turlari", image:""},
+  {id:"choy3", name:"Rayhon-yalpiz choy", price:10000, category:"Choy turlari", image:""},
+  {id:"non1", name:"Patir non", price:6000, category:"Non va boshlang'ich", image:""},
+  {id:"somsa1", name:"Go'shtli somsa", price:12000, category:"Non va boshlang'ich", image:""},
+  {id:"somsa2", name:"Kartoshkali somsa", price:8000, category:"Non va boshlang'ich", image:""},
+  {id:"salat1", name:"Achichuk salat", price:15000, category:"Non va boshlang'ich", image:""},
+  {id:"palov1", name:"Toshkent palovi", price:35000, category:"Issiq taomlar", image:""},
+  {id:"lagmon1", name:"Lag'mon", price:35000, category:"Issiq taomlar", image:""},
+  {id:"manti1", name:"Manti", price:30000, category:"Issiq taomlar", image:""},
+  {id:"shashlik1", name:"Qo'y go'shti shashlik", price:45000, category:"Issiq taomlar", image:""},
+  {id:"norin1", name:"Norin", price:40000, category:"Issiq taomlar", image:""},
+  {id:"halva1", name:"Halva", price:10000, category:"Shirinliklar", image:""},
+  {id:"parvarda1", name:"Parvarda", price:8000, category:"Shirinliklar", image:""},
+];
+
+let menuItems = [];
+let currentRoom = null;
+let roomsData = {};
+
+async function loadMenu(){
+  try{
+    const res = await storageGet('menu-items', true);
+    menuItems = res ? JSON.parse(res.value) : DEFAULT_MENU;
+    if(!res) await storageSet('menu-items', JSON.stringify(DEFAULT_MENU), true);
+  }catch(e){
+    menuItems = DEFAULT_MENU;
+    try{ await storageSet('menu-items', JSON.stringify(DEFAULT_MENU), true); }catch(e2){}
+  }
+}
+function emptyRoom(){ return {temp:[], confirmed:[], status:'free', updatedAt:null}; }
+let roomsLoadPromise = null;
+function ensureRoomsLoaded(){
+  if(!roomsLoadPromise){
+    roomsLoadPromise = (async()=>{
+      try{
+        const res = await storageGet('rooms', true);
+        const obj = res ? JSON.parse(res.value) : {};
+        for(let n=1;n<=15;n++) roomsData[n] = obj[n] || emptyRoom();
+      }catch(e){
+        for(let n=1;n<=15;n++) if(!roomsData[n]) roomsData[n] = emptyRoom();
+      }
+    })();
+  }
+  return roomsLoadPromise;
+}
+async function refreshRoomsCache(){
+  roomsLoadPromise = null;
+  await ensureRoomsLoaded();
+}
+async function loadRoom(num){
+  await ensureRoomsLoaded();
+  return roomsData[num] || emptyRoom();
+}
+async function saveRoom(num, data){
+  roomsData[num] = data;
+  await ensureRoomsLoaded();
+  const obj = {};
+  for(let n=1;n<=15;n++) obj[n] = roomsData[n] || emptyRoom();
+  try{ await storageSet('rooms', JSON.stringify(obj), true); }catch(e){}
+}
+function sumItems(items){ return items.reduce((s,i)=>s+i.price*i.qty,0); }
+
+async function addJournalEntry(entry){
+  let arr = [];
+  try{
+    const res = await storageGet('journal', true);
+    arr = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    arr = [];
+  }
+  arr.push(entry);
+  try{
+    await storageSet('journal', JSON.stringify(arr), true);
+  }catch(e){
+    console.error('Jurnalga yozishda xatolik:', e);
+  }
+}
+async function loadJournal(){
+  try{
+    const res = await storageGet('journal', true);
+    return res ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+
+async function renderRooms(){
+  const grid = document.getElementById('roomsGrid');
+  await refreshRoomsCache();
+  const nums = Array.from({length:15}, (_,i)=>i+1);
+  const cards = nums.map(n=>{
+    const data = roomsData[n];
+    const occupied = data.status === 'busy';
+    const total = occupied ? sumItems(data.confirmed) : 0;
+    return `<div class="room-card ${occupied?'occupied':''}" onclick="openRoom(${n})">
+      <button class="room-qr-btn" onclick="event.stopPropagation();showRoomQR(${n})" title="QR">▦</button>
+      <div class="num">${n}-${t('roomLabel').toLowerCase()}</div>
+      ${occupied ? `<div class="status">${t('occupied')}</div><div class="sum">${total.toLocaleString('ru-RU')} so'm</div>` : ''}
+    </div>`;
+  });
+  grid.innerHTML = cards.join('');
+}
+
+function itemThumb(item, size){
+  if(item.image) return `<img src="${item.image}" style="width:${size}px;height:${size}px;">`;
+  const color = colorForCategory(item.category || 'Boshqa');
+  const letter = (item.name||'?').trim().charAt(0).toUpperCase();
+  return `<div class="ph" style="width:${size}px;height:${size}px;background:${color};">${letter}</div>`;
+}
+
+async function openRoom(num){
+  currentRoom = num;
+  document.getElementById('roomModalTitle').textContent = t('roomLabel') + ' ' + num;
+  await refreshRoomsCache();
+  renderMenuPane();
+  renderOrderPane();
+  document.getElementById('roomOverlay').classList.add('show');
+}
+function closeRoomModal(){
+  document.getElementById('roomOverlay').classList.remove('show');
+  renderRooms();
+}
+
+function renderMenuPane(){
+  const pane = document.getElementById('menuPane');
+  const cats = {};
+  menuItems.forEach(it=>{
+    const c = it.category || 'Boshqa';
+    if(!cats[c]) cats[c] = [];
+    cats[c].push(it);
+  });
+  let html = `<h3>${t('menuHeading')}</h3>`;
+  Object.keys(cats).forEach(cat=>{
+    html += `<div class="cat-block"><div class="cat-title">${trCat(cat)}</div><div class="menu-items">`;
+    cats[cat].forEach(it=>{
+      html += `<div class="menu-item-card" onclick="addToTemp('${it.id}')">
+        ${it.image ? `<img class="menu-item-img" src="${it.image}">` : `<div class="menu-item-placeholder" style="background:${colorForCategory(cat)}">${it.name.charAt(0).toUpperCase()}</div>`}
+        <div class="menu-item-info"><div class="name">${trName(it)}</div><div class="price">${it.price.toLocaleString('ru-RU')} so'm</div></div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  pane.innerHTML = html;
+}
+
+function renderOrderPane(){
+  const pane = document.getElementById('orderPane');
+  const data = roomsData[currentRoom] || emptyRoom();
+  const tempTotal = sumItems(data.temp);
+  const confirmedTotal = sumItems(data.confirmed);
+
+  let tempHtml;
+  if(!data.temp || data.temp.length===0){
+    tempHtml = `<p class="order-empty">${t('orderEmpty')}</p>`;
+  } else {
+    tempHtml = data.temp.map(i=>{
+      const it = menuItems.find(m=>m.id===i.id) || i;
+      return `<div class="order-row">
+        ${itemThumb(it,38)}
+        <div class="info">${trName(it)}</div>
+        <div class="qty-ctrl">
+          <button onclick="changeTempQty('${i.id}',-1)">−</button>
+          <span>${i.qty}</span>
+          <button onclick="changeTempQty('${i.id}',1)">+</button>
+        </div>
+        <div class="sub">${(i.price*i.qty).toLocaleString('ru-RU')}</div>
+      </div>`;
+    }).join('') + `<div class="bill-total"><span>${t('total')}</span><span>${tempTotal.toLocaleString('ru-RU')} so'm</span></div>
+      <button class="btn btn-food-red" style="width:100%;" onclick="sendOrder()">${t('sendOrderBtn')}</button>`;
+  }
+
+  let confirmedHtml = '';
+  if(data.confirmed && data.confirmed.length>0){
+    confirmedHtml = `<h4>${t('sentSectionTitle')}</h4>` + data.confirmed.map(i=>{
+      const it = menuItems.find(m=>m.id===i.id) || i;
+      return `<div class="order-row readonly">
+        ${itemThumb(it,38)}
+        <div class="info">${trName(it)}</div>
+        <div class="info" style="text-align:center;flex:0 0 30px;">×${i.qty}</div>
+        <div class="sub">${(i.price*i.qty).toLocaleString('ru-RU')}</div>
+      </div>`;
+    }).join('') + `<div class="bill-total"><span>${t('total')}</span><span>${confirmedTotal.toLocaleString('ru-RU')} so'm</span></div>`;
+  }
+
+  pane.innerHTML = `<h3>${t('orderHeading')}</h3>${tempHtml}${confirmedHtml}`;
+}
+
+async function addToTemp(itemId){
+  const item = menuItems.find(i=>i.id===itemId);
+  if(!item) return;
+  const data = roomsData[currentRoom] || emptyRoom();
+  const existing = data.temp.find(i=>i.id===itemId);
+  if(existing) existing.qty += 1;
+  else data.temp.push({id:item.id, name:item.name, price:item.price, qty:1});
+  roomsData[currentRoom] = data;
+  await saveRoom(currentRoom, data);
+  renderOrderPane();
+}
+async function changeTempQty(itemId, delta){
+  const data = roomsData[currentRoom];
+  const it = data.temp.find(i=>i.id===itemId);
+  if(!it) return;
+  it.qty += delta;
+  if(it.qty<=0) data.temp = data.temp.filter(i=>i.id!==itemId);
+  await saveRoom(currentRoom, data);
+  renderOrderPane();
+}
+async function sendOrder(){
+  const data = roomsData[currentRoom];
+  if(!data.temp || data.temp.length===0) return;
+  data.temp.forEach(ti=>{
+    const ex = data.confirmed.find(c=>c.id===ti.id);
+    if(ex) ex.qty += ti.qty;
+    else data.confirmed.push({...ti});
+  });
+  data.temp = [];
+  data.status = 'busy';
+  data.updatedAt = new Date().toISOString();
+  await saveRoom(currentRoom, data);
+  try{ document.getElementById('orderSound').play().catch(()=>{}); }catch(e){}
+  showToast(`${t('roomLabel')} ${currentRoom}: ${t('newOrderToast')}`);
+  renderOrderPane();
+}
+
+/* ---------------- BILLING (CASHIER) ---------------- */
+async function renderBilling(){
+  const list = document.getElementById('billingList');
+  list.innerHTML = '';
+  let grand = 0;
+  let cardsHtml = '';
+  await refreshRoomsCache();
+  const nums = Array.from({length:15}, (_,i)=>i+1);
+  for(let idx=0; idx<nums.length; idx++){
+    const n = nums[idx];
+    const data = roomsData[n];
+    if(data.status !== 'busy' || !data.confirmed || data.confirmed.length===0) continue;
+    const total = sumItems(data.confirmed);
+    grand += total;
+    const timeStr = data.updatedAt ? new Date(data.updatedAt).toLocaleTimeString(currentLang==='ru'?'ru-RU':'uz-UZ',{hour:'2-digit',minute:'2-digit'}) : '';
+    const lines = data.confirmed.map((i,lidx)=>{
+      const it = menuItems.find(m=>m.id===i.id) || i;
+      return `<div class="edit-line">
+        <span class="nm">${trName(it)}</span>
+        <input type="number" value="${i.qty}" min="0" onchange="updateConfirmedLine(${n},${lidx},'qty',this.value)">
+        <input type="number" value="${i.price}" min="0" onchange="updateConfirmedLine(${n},${lidx},'price',this.value)">
+        <button class="rm" onclick="removeConfirmedLine(${n},${lidx})">×</button>
+      </div>`;
+    }).join('');
+    cardsHtml += `<div class="billing-card">
+      <div class="btop"><span class="rn">${t('roomLabel')} ${n}</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select class="pay-select" id="pay-type-${n}">
+          <option value="naqd">${t('cash')}</option>
+          <option value="plastik">${t('card')}</option>
+        </select>
+        <button class="btn btn-outline" onclick="generateReceiptPDF(${n})">${t('receiptPdf')}</button>
+        <button class="btn btn-clay" onclick="payRoom(${n})">${t('markPaid')}</button>
+      </div></div>
+      ${timeStr ? `<div style="font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;">${t('lastOrderTime')}: ${timeStr}</div>` : ''}
+      ${lines}
+      <div class="rowtotal"><span>${t('total')}</span><span>${total.toLocaleString('ru-RU')} so'm</span></div>
+    </div>`;
+  }
+  if(!cardsHtml){
+    list.innerHTML = `<div class="empty-state">${t('noOccupiedRooms')}</div>`;
+    return;
+  }
+  cardsHtml += `<div class="grand-total-box"><span>${t('grandTotal')}</span><span>${grand.toLocaleString('ru-RU')} so'm</span></div>`;
+  list.innerHTML = cardsHtml;
+}
+async function updateConfirmedLine(room, idx, field, val){
+  const data = await loadRoom(room);
+  if(!data.confirmed[idx]) return;
+  data.confirmed[idx][field] = parseInt(val) || 0;
+  await saveRoom(room, data);
+  renderBilling();
+}
+async function removeConfirmedLine(room, idx){
+  const data = await loadRoom(room);
+  data.confirmed.splice(idx,1);
+  if(data.confirmed.length===0) data.status = 'free';
+  await saveRoom(room, data);
+  renderBilling();
+}
+async function payRoom(n){
+  const data = await loadRoom(n);
+  const total = sumItems(data.confirmed);
+  const payTypeEl = document.getElementById('pay-type-'+n);
+  const paymentType = payTypeEl ? payTypeEl.value : 'naqd';
+  await addJournalEntry({
+    date:new Date().toISOString(), room:n, total, paymentType,
+    items: data.confirmed.map(i=>({name:i.name, qty:i.qty, price:i.price}))
+  });
+  await saveRoom(n, emptyRoom());
+  renderBilling();
+}
+
+function showToast(msg){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{
+    el.classList.remove('show');
+    setTimeout(()=>el.remove(), 300);
+  }, 4000);
+}
+
+function showRoomQR(n){
+  const url = location.origin + location.pathname + '?xona=' + n;
+  document.getElementById('qrTitle').textContent = t('roomLabel') + ' ' + n;
+  document.getElementById('qrImage').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(url);
+  document.getElementById('qrLink').textContent = url;
+  document.getElementById('qrOverlay').classList.add('show');
+}
+
+function generateReceiptPDF(n){
+  const data = roomsData[n];
+  if(!data || !data.confirmed || data.confirmed.length===0) return;
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'mm', format:[80, 150]});
+    let y = 10;
+    doc.setFontSize(13);
+    doc.text(t('appTitle'), 40, y, {align:'center'}); y+=7;
+    doc.setFontSize(9);
+    doc.text(new Date().toLocaleString(), 40, y, {align:'center'}); y+=6;
+    doc.text(`${t('roomLabel')} ${n}`, 40, y, {align:'center'}); y+=6;
+    doc.line(5, y, 75, y); y+=5;
+    let total = 0;
+    data.confirmed.forEach(i=>{
+      const sub = i.price*i.qty; total += sub;
+      doc.setFontSize(8);
+      doc.text(`${i.name} x${i.qty}`, 5, y);
+      doc.text(sub.toLocaleString('ru-RU'), 75, y, {align:'right'});
+      y += 5;
+    });
+    doc.line(5, y, 75, y); y+=6;
+    doc.setFontSize(10);
+    doc.text(t('total'), 5, y);
+    doc.text(total.toLocaleString('ru-RU')+" so'm", 75, y, {align:'right'});
+    doc.save(`chek-xona-${n}.pdf`);
+  }catch(e){
+    openDialog({message:t('pdfError'), mode:'alert'});
+  }
+}
+
+async function shareJournalExcel(){
+  const entries = await loadJournal();
+  if(entries.length===0){ await openDialog({message:t('journalEmpty'), mode:'alert'}); return; }
+  try{
+    const rows = entries.map(e=>({
+      [t('roomLabel')]: e.room,
+      [t('total')]: e.total,
+      'Turi': e.paymentType==='plastik' ? t('card') : t('cash'),
+      'Sana': new Date(e.date).toLocaleString(),
+      'Taomlar': (e.items||[]).map(i=>`${i.name} x${i.qty}`).join(', ')
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Jurnal');
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    const blob = new Blob([wbout], {type:'application/octet-stream'});
+    const file = new File([blob], 'jurnal.xlsx', {type: blob.type});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file], title:'Jurnal', text:t('journalTitle')});
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'jurnal.xlsx'; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      await openDialog({message:t('shareFallbackMsg'), mode:'alert'});
+    }
+  }catch(e){
+    await openDialog({message:t('pdfError'), mode:'alert'});
+  }
+}
+
+/* ---------------- JOURNAL ---------------- */
+async function renderJournal(){
+  const entries = await loadJournal();
+  const summaryEl = document.getElementById('journalSummary');
+  const listEl = document.getElementById('journalList');
+  const total = entries.reduce((s,e)=>s+e.total,0);
+  const naqdTotal = entries.filter(e=>e.paymentType!=='plastik').reduce((s,e)=>s+e.total,0);
+  const plastikTotal = entries.filter(e=>e.paymentType==='plastik').reduce((s,e)=>s+e.total,0);
+  summaryEl.innerHTML = `
+    <div class="journal-summary"><span>${t('journalTotalToday')}</span><span>${total.toLocaleString('ru-RU')} so'm</span></div>
+    <div class="tool-row">
+      <button onclick="shareJournalExcel()">${t('exportExcel')}</button>
+    </div>
+    <div style="display:flex;gap:16px;font-size:12.5px;color:var(--ink-soft);margin-bottom:14px;">
+      <span>${t('cash')}: ${naqdTotal.toLocaleString('ru-RU')} so'm</span>
+      <span>${t('card')}: ${plastikTotal.toLocaleString('ru-RU')} so'm</span>
+    </div>`;
+  if(entries.length===0){
+    listEl.innerHTML = `<div class="empty-state">${t('journalEmpty')}</div>`;
+    return;
+  }
+  const sorted = [...entries].reverse();
+  listEl.innerHTML = sorted.map(e=>{
+    const dObj = new Date(e.date);
+    const dateStr = dObj.toLocaleDateString(currentLang==='ru'?'ru-RU':'uz-UZ');
+    const timeStr = dObj.toLocaleTimeString(currentLang==='ru'?'ru-RU':'uz-UZ',{hour:'2-digit',minute:'2-digit'});
+    const itemsStr = (e.items||[]).map(i=>`${i.name} ×${i.qty}`).join(', ');
+    const payLabel = e.paymentType==='plastik' ? t('card') : t('cash');
+    return `<div class="journal-row" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;justify-content:space-between;">
+        <span class="rn">${t('roomLabel')} ${e.room}</span>
+        <span class="amt">${e.total.toLocaleString('ru-RU')} so'm (${payLabel})</span>
+      </div>
+      <div class="dt">${t('dateLabel')}: ${dateStr} · ${t('timeLabel')}: ${timeStr}</div>
+      ${itemsStr ? `<div class="journal-items">${itemsStr}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+async function clearJournal(){
+  const entries = await loadJournal();
+  if(entries.length===0){ await openDialog({message:t('journalEmpty'), mode:'alert'}); return; }
+  const ok = await openDialog({title:t('clearJournalBtn'), message:t('clearJournalConfirm'), mode:'confirm'});
+  if(!ok) return;
+  try{
+    await storageSet('journal-backup:'+Date.now(), JSON.stringify(entries), true);
+  }catch(e){}
+  try{ await storageSet('journal', JSON.stringify([]), true); }catch(e){}
+  await openDialog({message:t('clearJournalDone'), mode:'alert'});
+  renderJournal();
+  renderBilling();
+}
+
+async function endDay(){
+  const entries = await loadJournal();
+  const todayStr = new Date().toDateString();
+  const todaysEntries = entries.filter(e => new Date(e.date).toDateString() === todayStr);
+  if(todaysEntries.length===0){ await openDialog({message:t('endDayNone'), mode:'alert'}); return; }
+  const total = todaysEntries.reduce((s,e)=>s+e.total,0);
+  const expenseStr = await openDialog({title:t('toolEndDay'), message:t('expensePrompt'), mode:'prompt', inputType:'number'});
+  if(expenseStr === null) return;
+  const expense = parseInt(expenseStr) || 0;
+  const profit = total - expense;
+  const profitLine = profit>=0
+    ? `${t('profitLabel')}: ${profit.toLocaleString('ru-RU')} so'm`
+    : `${t('lossLabel')}: ${Math.abs(profit).toLocaleString('ru-RU')} so'm`;
+  const ok = await openDialog({title:t('toolEndDay'), message:`${t('journalTotalToday')}: ${total.toLocaleString('ru-RU')} so'm\n${t('expenseLabel')}: ${expense.toLocaleString('ru-RU')} so'm\n${profitLine}\n\n${t('endDayConfirmSuffix')}`, mode:'confirm'});
+  if(!ok) return;
+  try{
+    await storageSet('day-close:'+new Date().toISOString().slice(0,10)+'-'+Date.now(), JSON.stringify({entries:todaysEntries, expense, total, profit}), true);
+  }catch(e){}
+  await openDialog({message:t('endDaySuccess'), mode:'alert'});
+  renderJournal();
+  renderBilling();
+}
+
+/* ---------------- ADD / EDIT PRODUCTS ---------------- */
+function setImgMode(mode){
+  document.getElementById('tabLink').classList.toggle('active', mode==='link');
+  document.getElementById('tabUpload').classList.toggle('active', mode==='upload');
+  document.getElementById('pImgLink').style.display = mode==='link' ? 'block':'none';
+  document.getElementById('pImgFile').style.display = mode==='upload' ? 'block':'none';
+  window._imgMode = mode;
+}
+document.getElementById('pImgLink').addEventListener('input', (e)=>{
+  const url = e.target.value.trim();
+  document.getElementById('imgPreview').innerHTML = url ? `<img src="${url}">` : t('imgPreviewPlaceholder');
+});
+document.getElementById('pImgFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    const img = new Image();
+    img.onload = function(){
+      const maxW = 640;
+      const scale = Math.min(1, maxW/img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width*scale;
+      canvas.height = img.height*scale;
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg',0.8);
+      document.getElementById('imgPreview').innerHTML = `<img src="${dataUrl}">`;
+      document.getElementById('pImgFile').dataset.dataurl = dataUrl;
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+async function saveProduct(){
+  const name = document.getElementById('pName').value.trim();
+  const price = parseInt(document.getElementById('pPrice').value);
+  const cat = document.getElementById('pCat').value.trim() || 'Boshqa';
+  let image = '';
+  if((window._imgMode||'link')==='link') image = document.getElementById('pImgLink').value.trim();
+  else image = document.getElementById('pImgFile').dataset.dataurl || '';
+  if(!name || !price){ await openDialog({message:"Iltimos, nomi va narxini kiriting.", mode:'alert'}); return; }
+  const newItem = {id:'p_'+Date.now(), name, price, category:cat, image};
+  menuItems.push(newItem);
+  try{ await storageSet('menu-items', JSON.stringify(menuItems), true); }
+  catch(e){ await openDialog({message:"Saqlashda xatolik yuz berdi.", mode:'alert'}); return; }
+  document.getElementById('pName').value='';
+  document.getElementById('pPrice').value='';
+  document.getElementById('pCat').value='';
+  document.getElementById('pImgLink').value='';
+  document.getElementById('pImgFile').value='';
+  document.getElementById('pImgFile').dataset.dataurl='';
+  document.getElementById('imgPreview').innerHTML=t('imgPreviewPlaceholder');
+  renderCategoryList();
+  renderProductsList();
+}
+async function updateProduct(id){
+  const nameInput = document.getElementById('n_'+id);
+  const priceInput = document.getElementById('pr_'+id);
+  const item = menuItems.find(i=>i.id===id);
+  if(!item) return;
+  item.name = nameInput.value.trim() || item.name;
+  item.price = parseInt(priceInput.value) || item.price;
+  try{ await storageSet('menu-items', JSON.stringify(menuItems), true); }catch(e){}
+  renderProductsList();
+}
+async function deleteProduct(id){
+  menuItems = menuItems.filter(i=>i.id!==id);
+  try{ await storageSet('menu-items', JSON.stringify(menuItems), true); }catch(e){}
+  renderProductsList();
+}
+function renderCategoryList(){
+  const dl = document.getElementById('catList');
+  const cats = [...new Set(menuItems.map(i=>i.category))];
+  dl.innerHTML = cats.map(c=>`<option value="${c}">`).join('');
+}
+function renderProductsList(){
+  const wrap = document.getElementById('productsList');
+  wrap.innerHTML = menuItems.map(it=>`
+    <div class="product-row">
+      ${itemThumb(it,44)}
+      <input class="n-input" id="n_${it.id}" value="${it.name}">
+      <input class="p-input" id="pr_${it.id}" type="number" value="${it.price}">
+      <button class="save-p" onclick="updateProduct('${it.id}')">${t('save')}</button>
+      <button class="del" onclick="deleteProduct('${it.id}')">${t('del')}</button>
+    </div>
+  `).join('');
+}
+
+function showView(view){
+  document.getElementById('roomsView').style.display = view==='rooms' ? 'block':'none';
+  document.getElementById('billingView').style.display = view==='billing' ? 'block':'none';
+  document.getElementById('journalView').style.display = view==='journal' ? 'block':'none';
+  document.getElementById('addView').style.display = view==='add' ? 'block':'none';
+  document.getElementById('tabRooms').classList.toggle('active', view==='rooms');
+  document.getElementById('tabBilling').classList.toggle('active', view==='billing' || view==='journal' || view==='add');
+  if(view==='rooms') renderRooms();
+  if(view==='billing') renderBilling();
+  if(view==='journal') renderJournal();
+  if(view==='add'){ renderCategoryList(); renderProductsList(); }
+}
+
+let isCustomerMode = false;
+function getUrlRoomParam(){
+  const params = new URLSearchParams(location.search);
+  const v = parseInt(params.get('xona'));
+  return (v>=1 && v<=15) ? v : null;
+}
+(async function init(){
+  window._imgMode='link';
+  applyStaticTranslations();
+  const statusEl = document.getElementById('storageStatus');
+  if(statusEl){
+    if(_firebaseReady){
+      statusEl.textContent = '🟢 Firebase ulangan — barcha qurilmalarga umumiy xotira';
+      statusEl.style.color = '#4CAF50';
+    } else if(_hasRealStorage()){
+      statusEl.textContent = '🟡 Claude ichki xotirasi ishlatilmoqda';
+      statusEl.style.color = 'var(--gold)';
+    } else {
+      statusEl.textContent = '🔴 Vaqtinchalik xotira (Firebase ulanmagan) — sahifa yopilsa ma\'lumot yo\'qoladi';
+      statusEl.style.color = 'var(--clay)';
+    }
+  }
+  await loadMenu();
+  const roomParam = getUrlRoomParam();
+  if(roomParam){
+    isCustomerMode = true;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.querySelector('nav.bar').style.display = 'none';
+    document.querySelector('header.top .exit-btn').style.display = 'none';
+    await openRoom(roomParam);
+    const closeBtn = document.querySelector('#roomOverlay .room-modal-head button');
+    if(closeBtn) closeBtn.style.display = 'none';
+  }
+})();
+</script>
+</body>
+</html>
